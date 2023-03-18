@@ -1,2 +1,2 @@
 # Project
-## _Isolated Sign Language Recognition Using Neural Network_
+## _American sign language (ASL) to text conversion using neural networks_
