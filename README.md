@@ -1,1 +1,2 @@
-# Isolated-Sign-Language-Recognition-using-neural-network
+# Project
+## _Isolated Sign Language Recognition Using Neural Network_
