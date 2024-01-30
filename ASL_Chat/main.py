@@ -51,5 +51,5 @@ if __name__ == "__main__":
         widgetList.show()
         app.exec_()
     except Exception as e:
-        print("Exception: ",str(e))
+        print("Exception:",str(e))
         
