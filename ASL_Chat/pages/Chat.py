@@ -6,6 +6,8 @@ import threading
 from CONST import *
 import cv2
 import time
+import torch
+import numpy as np
 
 class MessageSignal(QObject):
     message_received = pyqtSignal(str,str)
@@ -28,6 +30,11 @@ class Chat(QDialog):
         self.message_signal = MessageSignal()
         self.message_signal.message_received.connect(self.add_new_message_to_box)
         self.active_network_flag = False
+        
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(torch.__version__)
+        print('Using device:', self.device)
+        self.model = torch.hub.load('ultralytics/yolov5','yolov5s')
 
     def save_info(self,con,name):
         self.con =con
@@ -98,8 +105,12 @@ class Chat(QDialog):
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             height, width, channel = frame.shape
             bytes_per_line = 3 * width
-            pixmap = QPixmap(QImage(frame_rgb.data, width, height, bytes_per_line, QImage.Format_RGB888))
+            
+            self.yolo_result = self.model(frame_rgb)
+            self.pic = np.squeeze(self.yolo_result.render())
+            pixmap = QPixmap(QImage(self.pic.data, width, height, bytes_per_line, QImage.Format_RGB888))
             # Display the QPixmap in the QLabel
+            
             self.cameraFeed.setPixmap(pixmap)
             time.sleep(0.04)
         self.cam.release()
