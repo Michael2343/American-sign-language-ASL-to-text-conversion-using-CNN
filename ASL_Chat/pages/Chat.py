@@ -42,14 +42,6 @@ class Chat(QDialog):
     def set_yolo(self,yolo):
         self.yolov5_instance = yolo
         
-<<<<<<< HEAD
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print(torch.__version__)
-        print('Using device:', self.device)
-        self.model = torch.hub.load('ultralytics/yolov5','yolov5x')
-
-=======
->>>>>>> d49fe2855f4347bcfd41d671affdf11ccef377e7
     def save_info(self,con,name):
         self.con =con
         self.name = name
