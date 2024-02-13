@@ -50,7 +50,7 @@ class HostPage(QDialog):
             serverCon, addr = self.serverSocket.accept()
             self.serverCon = serverCon
             print("Client connected!")
-            self.widget.setCurrentIndex(HOST_CHAT_PAGE)
+            self.widget.setCurrentIndex(CHAT_PAGE)
             HostChatWidget = self.widget.currentWidget()
             HostChatWidget.save_info(self.serverCon,self.name)
         except Exception as e:
