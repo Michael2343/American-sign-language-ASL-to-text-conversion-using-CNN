@@ -74,9 +74,6 @@ class YOLOv5:
         
     def set_window(self,window):
         self.window_instance = window
-        
-    def set_streaming(self,state):
-        self.window_instance = state
     
     def get_results(self):
         return self.all_res 
