@@ -41,8 +41,9 @@ class ClientPage(QDialog):
             self.error("Enter all fields!")
             return
         try:
+            print("MAKE chat for client")
             self.clientSocket.connect((self.ip, int(self.port)))
-            self.widget.setCurrentIndex(CLIENT_CHAT_PAGE)
+            self.widget.setCurrentIndex(CHAT_PAGE)
             clientChatWidget = self.widget.currentWidget()
             clientChatWidget.save_info(self.clientSocket,self.name)
         except Exception as e:

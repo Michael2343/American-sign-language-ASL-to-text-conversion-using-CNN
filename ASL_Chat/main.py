@@ -9,6 +9,7 @@ from pages.ClientPage import *
 # from pages.prev.ClientChatPage import *
 # from pages.prev.ChatPage import *
 from pages.Chat import *
+from yolov5.YOLOv5 import YOLOv5
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -24,9 +25,13 @@ if __name__ == "__main__":
     # widgetList.addWidget(ChatPage(widgetList,"host"))
     # widgetList.addWidget(ChatPage(widgetList,"client"))
 
-    widgetList.addWidget(Chat(widgetList,"asl"))
-    widgetList.addWidget(Chat(widgetList,"non-asl"))
-
+    chat = Chat(widgetList)
+    widgetList.addWidget(chat)
+    
+    yolo = YOLOv5()
+    yolo.set_window(chat)
+    chat.set_yolo(yolo)
+    
     # 1
     # widgetList.setFixedWidth(1200)
     # widgetList.setFixedHeight(800)
@@ -51,5 +56,5 @@ if __name__ == "__main__":
         widgetList.show()
         app.exec_()
     except Exception as e:
-        print("Exception: ",str(e))
+        print("Exception:",str(e))
         

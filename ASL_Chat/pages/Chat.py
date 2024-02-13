@@ -8,16 +8,24 @@ import cv2
 import time
 import torch
 import numpy as np
+from pathlib import Path
+import sys
+import os
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 class MessageSignal(QObject):
     message_received = pyqtSignal(str,str)
 
 class Chat(QDialog):
-    def __init__(self,widget,type):
+    def __init__(self,widget):
         super(Chat,self).__init__()
         loadUi("ui/Chat.ui",self)
         self.widget = widget
-        self.type = type # asl / non-asl
         self.sendButton.clicked.connect(self.send_message)
         self.chatText.returnPressed.connect(self.send_message)
         self.translatorButton.clicked.connect(self.active_netowrk)
@@ -29,33 +37,38 @@ class Chat(QDialog):
         
         self.message_signal = MessageSignal()
         self.message_signal.message_received.connect(self.add_new_message_to_box)
-        self.active_network_flag = False
+        self.active_network_flag = [False]        
         
+    def set_yolo(self,yolo):
+        self.yolov5_instance = yolo
+        
+<<<<<<< HEAD
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print(torch.__version__)
         print('Using device:', self.device)
         self.model = torch.hub.load('ultralytics/yolov5','yolov5x')
 
+=======
+>>>>>>> d49fe2855f4347bcfd41d671affdf11ccef377e7
     def save_info(self,con,name):
         self.con =con
         self.name = name
         self.msgThread = threading.Thread(target=self.handle_msg, args=(self.con,))
         self.msgThread.start()
-
+     
     def active_netowrk(self):
-        self.active_network_flag = not self.active_network_flag
-        print(self.active_network_flag)
-        if self.active_network_flag:
-            self.camThread = threading.Thread(target=self.show_webcam)
-            self.camThread.start()
+        self.active_network_flag[0] = not self.active_network_flag[0]
+        print(self.active_network_flag[0])
+        if self.active_network_flag[0]:
             self.translatorButton.setStyleSheet("background-color : green") 
             self.cameraFeed.setVisible(True)
             self.scrollArea.setGeometry(680, 80, 490, 600)
             self.scrollAreaWidget.setGeometry(0, 0, 490-15, self.scrollAreaWidget.height())
+            self.yolov5_instance.main(self.active_network_flag)
+
         else:
             self.translatorButton.setStyleSheet("background-color : red") 
             self.cameraFeed.setVisible(False)
-            self.camThread.join()
             self.scrollArea.setGeometry(130, 80, 961, 600)
             self.scrollAreaWidget.setGeometry(0, 0, 961-15, self.scrollAreaWidget.height())
 
@@ -92,25 +105,15 @@ class Chat(QDialog):
                 print("Connection closed!")
                 break
     
-    def show_webcam(self):
-        self.cam = cv2.VideoCapture(0)
-        labelWidth = int(self.cam.get(cv2.CAP_PROP_FRAME_WIDTH))
-        labelHeight = int(self.cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(labelWidth,labelHeight)
-        self.cameraFeed.setFixedWidth(labelWidth)
-        self.cameraFeed.setFixedHeight(labelHeight)
-        while self.active_network_flag:
-            ret_val, frame = self.cam.read()
-            frame = cv2.resize(frame, (labelWidth, labelHeight))
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            height, width, channel = frame.shape
-            bytes_per_line = 3 * width
-            
-            self.yolo_result = self.model(frame_rgb)
-            self.pic = np.squeeze(self.yolo_result.render())
-            pixmap = QPixmap(QImage(self.pic.data, width, height, bytes_per_line, QImage.Format_RGB888))
-            # Display the QPixmap in the QLabel
-            
-            self.cameraFeed.setPixmap(pixmap)
-            time.sleep(0.04)
-        self.cam.release()
+    def show_webcam(self,result):
+        frame = result["image"]
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        
+        width = self.cameraFeed.width()
+        height = self.cameraFeed.height()
+        bytes_per_line = 3 * width
+        
+        pixmap = QPixmap(QImage(frame_rgb, width, height, bytes_per_line, QImage.Format_RGB888))
+        # Display the QPixmap in the QLabel
+        
+        self.cameraFeed.setPixmap(pixmap)
