@@ -97,6 +97,7 @@ class Chat(QDialog):
                 print("Connection closed!")
                 break
     
+    
     def show_webcam(self,result):
         frame = result["image"]
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
