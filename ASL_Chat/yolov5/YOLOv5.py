@@ -70,6 +70,7 @@ class YOLOv5:
         self.im_result = None  # to store im
         self.labels_result = []  # to store predicted labels
         self.all_res = [] #to store all data
+        self.crop = None
         self.cnt = 0
         
     def set_window(self,window):
@@ -220,6 +221,7 @@ class YOLOv5:
                         label = names[c] if hide_conf else f"{names[c]}"
                         confidence = float(conf)
                         confidence_str = f"{confidence:.2f}"
+                      
 
                         if save_csv:
                             write_to_csv(p.name, label, confidence_str)
@@ -230,15 +232,19 @@ class YOLOv5:
                             with open(f"{txt_path}.txt", "a") as f:
                                 f.write(("%g " * len(line)).rstrip() % line + "\n")
 
+
                         if save_img or save_crop or view_img:  # Add bbox to image
                             c = int(cls)  # integer class
                             label = None if hide_labels else (names[c] if hide_conf else f"{names[c]} {conf:.2f}")
                             annotator.box_label(xyxy, label, color=colors(c, True))
+    
                         if save_crop:
-                            save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True)
+                            self.crop = save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True,save =False)
+                            cv2.imshow('ahSeliii',self.crop) #debug
 
                 # Stream results
                 im0 = annotator.result()
+
                 if view_img:
                     if platform.system() == "Linux" and p not in windows:
                         windows.append(p)
@@ -269,7 +275,7 @@ class YOLOv5:
                 # Append the results to the lists for each iteration
                 self.im_result = im0
                 self.labels_result =[{"label": names[int(cls)], "confidence": f"{float(conf):.2f}"} for *xyxy, conf, cls in reversed(det)]
-                new_result = {'cnt': self.cnt+1, 'image': self.im_result, 'labels': self.labels_result}
+                new_result = {'cnt': self.cnt+1, 'image': self.im_result, 'labels': self.labels_result,'crop_image':self.crop}
                 self.all_res.append(new_result)
                 self.window_instance.show_webcam(new_result)
                 self.cnt = self.cnt + 1
@@ -294,9 +300,9 @@ class YOLOv5:
         imgsz *= 2 if len(imgsz) == 1 else 1  # expand
 
         self.run_detect(active_network_flag = active_network_flag,
-                        weights=ROOT / "yolov5s.pt", source="0", data=ROOT / "data/coco128.yaml",
+                        weights=ROOT / "yolov5l6_best2.pt", source="0", data=ROOT / "hand_data.yaml",
                         imgsz=imgsz, conf_thres=0.25, iou_thres=0.45, max_det=1000, device="", view_img=False,
-                        save_txt=False, save_csv=False, save_conf=False, save_crop=False, nosave=False,
+                        save_txt=False, save_csv=False, save_conf=False, save_crop=True, nosave=False,
                         classes=None, agnostic_nms=False, augment=False, visualize=False, update=False,
                         project=ROOT / "runs/detect", name="exp", exist_ok=False, line_thickness=3,
                         hide_labels=False, hide_conf=False, half=False, dnn=False, vid_stride=1)
