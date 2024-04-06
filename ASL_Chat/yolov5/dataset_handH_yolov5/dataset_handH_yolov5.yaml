@@ -1,0 +1,6 @@
+train: dataset_handH_yolov5/train/images
+val: dataset_handH_yolov5/valid/images
+test: dataset_handH_yolov5/test/images
+
+nc: 1
+names: ["hand"]

@@ -10,6 +10,9 @@ from pages.ClientPage import *
 # from pages.prev.ChatPage import *
 from pages.Chat import *
 from yolov5.YOLOv5 import YOLOv5
+from densenet import *
+from PIL import Image
+import torch
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -29,6 +32,17 @@ if __name__ == "__main__":
     widgetList.addWidget(chat)
     
     yolo = YOLOv5()
+    
+    densnet = make_densenet(type=DENSENET_TYPE).to(DEVICE)
+    # FILE = Path(__file__).resolve()
+    # ROOT = FILE.parents[0]
+    # print(ROOT)
+    # x=os.open(PT_PATH+PT_FILE,os.O_RDONLY)
+    # os.read(x,50)
+    trained_model = torch.load(PT_PATH+PT_FILE)
+    densnet.load_state_dict(trained_model.state_dict())#(type=DENSENET_TYPE).to(DEVICE)``
+    
+    yolo.set_densenet(densnet)
     yolo.set_window(chat)
     chat.set_yolo(yolo)
     
