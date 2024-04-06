@@ -33,15 +33,19 @@ import platform
 import sys
 from pathlib import Path
 import torch
-
+from PIL import Image
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-from ultralytics.utils.plotting import Annotator, colors, save_one_box
 
+LETTERS_CLASSES = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'H', 8: 'I', 9: 'J', 10: 'K', 
+                   11: 'L', 12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'S', 19: 'T', 20: 'U', 
+                   21: 'V', 22: 'W', 23: 'X', 24: 'Y', 25: 'Z', 26: 'DELETE', 27: 'ENTER', 28: 'SPACE'}
+
+from ultralytics.utils.plotting import Annotator, colors, save_one_box
 from models.common import DetectMultiBackend
 from utils.dataloaders import IMG_FORMATS, VID_FORMATS, LoadImages, LoadScreenshots, LoadStreams
 from utils.general import (
@@ -69,13 +73,18 @@ class YOLOv5:
     def reset_results(self):
         self.im_result = None  # to store im
         self.labels_result = []  # to store predicted labels
-        self.all_res = [] #to store all data
         self.crop = None
         self.cnt = 0
+        self.predict_label = " "
+        self.label_txt = " "
+        self.predict_densenet = None
         
     def set_window(self,window):
         self.window_instance = window
     
+    def set_densenet(self,densenet):
+        self.densenet_instance = densenet
+        
     def get_results(self):
         return self.all_res 
         
@@ -232,19 +241,35 @@ class YOLOv5:
                             with open(f"{txt_path}.txt", "a") as f:
                                 f.write(("%g " * len(line)).rstrip() % line + "\n")
 
-
-                        if save_img or save_crop or view_img:  # Add bbox to image
-                            c = int(cls)  # integer class
-                            label = None if hide_labels else (names[c] if hide_conf else f"{names[c]} {conf:.2f}")
-                            annotator.box_label(xyxy, label, color=colors(c, True))
-    
                         if save_crop:
-                            self.crop = save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True,save =False)
-                            cv2.imshow('ahSeliii',self.crop) #debug
+                            if self.cnt % 3 == 0:
+                                self.cnt = 0
+                        
+                                self.crop = save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True,save =False)
+                                opencv_image_rgb = cv2.cvtColor(self.crop, cv2.COLOR_BGR2RGB)
+                                pil_image = Image.fromarray(opencv_image_rgb)
+                                self.predict_densenet = self.densenet_instance.densenet_detect(pil_image)
+                                
+                                if self.predict_densenet != None:
+                                    self.predict_label = LETTERS_CLASSES[self.predict_densenet[0]]
+                                    self.conf = self.predict_densenet[1]
+                                    self.label_txt = f"{self.predict_label} {self.conf:.2f}"
+                                    c = annotator.box_label(xyxy, self.label_txt, color=colors(self.predict_densenet[0]%20, True)) 
+                                else:
+                                    self.predict_label = " "
+                            else:
+                                if self.label_txt!= " " and self.predict_densenet != None:
+                                    c = annotator.box_label(xyxy, self.label_txt, color=colors(self.predict_densenet[0]%20, True)) 
+
+                                
+                                    
+                        # if save_img or save_crop or view_img:  # Add bbox to image
+                        #     c = int(cls)  # integer class
+                        #     label = None if hide_labels else (names[c] if hide_conf else f"{names[c]} {conf:.2f}")
+                        #     annotator.box_label(xyxy, label, color=colors(c, True)) 
 
                 # Stream results
                 im0 = annotator.result()
-
                 if view_img:
                     if platform.system() == "Linux" and p not in windows:
                         windows.append(p)
@@ -274,14 +299,12 @@ class YOLOv5:
 
                 # Append the results to the lists for each iteration
                 self.im_result = im0
-                self.labels_result =[{"label": names[int(cls)], "confidence": f"{float(conf):.2f}"} for *xyxy, conf, cls in reversed(det)]
-                new_result = {'cnt': self.cnt+1, 'image': self.im_result, 'labels': self.labels_result,'crop_image':self.crop}
-                self.all_res.append(new_result)
+                new_result = {'image': self.im_result, 'label': self.predict_label,'valid': True if self.cnt == 0 else False} 
                 self.window_instance.show_webcam(new_result)
                 self.cnt = self.cnt + 1
 
             # Print time (inference-only)
-            LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
+            # LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
         # Print results
         t = tuple(x.t / seen * 1e3 for x in dt)  # speeds per image
@@ -298,10 +321,10 @@ class YOLOv5:
 
         imgsz = [640]  # default value
         imgsz *= 2 if len(imgsz) == 1 else 1  # expand
-
+       
         self.run_detect(active_network_flag = active_network_flag,
-                        weights=ROOT / "yolov5l6_best2.pt", source="0", data=ROOT / "hand_data.yaml",
-                        imgsz=imgsz, conf_thres=0.25, iou_thres=0.45, max_det=1000, device="", view_img=False,
+                        weights=ROOT / "yolov5l6_v3.pt", source="0", data=ROOT / "hand_data.yaml",
+                        imgsz=imgsz, conf_thres=0.35, iou_thres=0.45, max_det=1, device="", view_img=False,
                         save_txt=False, save_csv=False, save_conf=False, save_crop=True, nosave=False,
                         classes=None, agnostic_nms=False, augment=False, visualize=False, update=False,
                         project=ROOT / "runs/detect", name="exp", exist_ok=False, line_thickness=3,

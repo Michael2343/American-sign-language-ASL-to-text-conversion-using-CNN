@@ -11,6 +11,7 @@ import numpy as np
 from pathlib import Path
 import sys
 import os
+import collections 
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -37,11 +38,14 @@ class Chat(QDialog):
         
         self.message_signal = MessageSignal()
         self.message_signal.message_received.connect(self.add_new_message_to_box)
-        self.active_network_flag = [False]        
+        self.active_network_flag = [False]    
+        
+        self.last_predicts = 10
+        self.letter_history = [" "]*self.last_predicts    
         
     def set_yolo(self,yolo):
         self.yolov5_instance = yolo
-        
+  
     def save_info(self,con,name):
         self.con =con
         self.name = name
@@ -99,7 +103,9 @@ class Chat(QDialog):
     
     
     def show_webcam(self,result):
+        #frame gui
         frame = result["image"]
+
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         width = self.cameraFeed.width()
@@ -110,3 +116,36 @@ class Chat(QDialog):
         # Display the QPixmap in the QLabel
         
         self.cameraFeed.setPixmap(pixmap)
+        
+        #label logic
+        valid = result["valid"]
+        if valid:
+            
+            # Set focus on the QLineEdit to see the text cursor
+            self.chatText.setFocus()
+            
+            label = result["label"]
+            self.letter_history.append(label)
+            if len(self.letter_history) > self.last_predicts:
+                self.letter_history.pop(0)
+            
+            counter = collections.Counter(self.letter_history)
+
+            # Find the element with the maximum count
+            most_common_element, occurrences = counter.most_common(1)[0]
+            percentage = (float(occurrences) / self.last_predicts) * 100
+            # print(most_common_element, occurrences,percentage)
+            # Check if conditions are met
+            
+            if 70<=percentage<=100 and most_common_element != " ":
+                if most_common_element == "ENTER":
+                    self.send_message()
+                elif most_common_element == "DELETE":
+                    self.chatText.backspace()
+                elif most_common_element == "SPACE":
+                    self.chatText.setText((self.chatText.text() + " "))
+                else:                        
+                    print("most_common_element:"+most_common_element)
+                    self.chatText.setText((self.chatText.text() + most_common_element))
+                self.letter_history = [" "]*self.last_predicts
+                
