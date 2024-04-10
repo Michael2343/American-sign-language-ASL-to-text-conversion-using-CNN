@@ -1,4 +1,11 @@
-# Load in relevant libraries, and alias where appropriate
+"""
+This script defines functions to load a DenseNet model, perform object detection using the model, 
+and handle either static images or real-time video streams. It includes a function to load the DenseNet 
+model, and to perform object detection on images. 
+If it's set to process images, it loads images from specified paths and applies object detection. 
+If it's set to process a video stream, it captures frames from the webcam, converts them to PIL images, and performs object detection.
+"""
+
 import torch
 import torch.nn as nn
 import torchvision
@@ -10,7 +17,7 @@ import torch
 import time
 from CONST_DENSENET import *
 
-
+# Function to get the DenseNet model
 def get_model():
     model = make_densenet(type=DENSENET_TYPE).to(DEVICE)
     trained_model = torch.load(PT_PATH+PT_FILE)
@@ -20,6 +27,7 @@ def get_model():
 model = get_model()
 # print(model)
 
+# Function to detect objects using DenseNet model
 def densenet_detect(image):
     # Set the model to evaluation mode
     model.eval()
@@ -49,7 +57,7 @@ def densenet_detect(image):
     print(f"Elapsed time: {elapsed_time} seconds")
     print("")
 
-
+# Entry point of the script
 if __name__ == "__main__":
     if IMAGES_OR_CAM:
         # Load the image from a file
@@ -76,12 +84,9 @@ if __name__ == "__main__":
             pil_image = Image.fromarray(opencv_image_rgb)
             densenet_detect(pil_image)
 
-            
             # the 'q' button is set as the 
             # quitting button you may use any 
             # desired button of your choice 
             if cv2.waitKey(1) & 0xFF == ord('q'): 
                 break
-            
-        
-            
+                      

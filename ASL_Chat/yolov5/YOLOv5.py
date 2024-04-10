@@ -66,10 +66,12 @@ from utils.general import (
 )
 from utils.torch_utils import select_device, smart_inference_mode
 
+# Warpper for yolov5 predict file 
 class YOLOv5:
     def __init__(self):
         self.reset_results()
 
+    # Reset prediction results
     def reset_results(self):
         self.im_result = None  # to store im
         self.labels_result = []  # to store predicted labels
@@ -78,13 +80,16 @@ class YOLOv5:
         self.predict_label = " "
         self.label_txt = " "
         self.predict_densenet = None
-        
+       
+    # Set the window instance for interaction
     def set_window(self,window):
         self.window_instance = window
     
+    # Set the DenseNet instance for interaction
     def set_densenet(self,densenet):
         self.densenet_instance = densenet
-        
+     
+    # Get prediction results   
     def get_results(self):
         return self.all_res 
         
@@ -241,28 +246,41 @@ class YOLOv5:
                             with open(f"{txt_path}.txt", "a") as f:
                                 f.write(("%g " * len(line)).rstrip() % line + "\n")
 
+                        """"
+                        This block of code processes the results obtained from the YOLOv5 model 
+                        and interacts with the DenseNet model for further analysis.
+                        """
                         if save_crop:
+                            # For every 3rd prediction
                             if self.cnt % 3 == 0:
                                 self.cnt = 0
-                        
+                                # Crop the detected object from the image
                                 self.crop = save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True,save =False)
                                 opencv_image_rgb = cv2.cvtColor(self.crop, cv2.COLOR_BGR2RGB)
                                 pil_image = Image.fromarray(opencv_image_rgb)
+                                
+                                # Detect using DenseNet model
                                 self.predict_densenet = self.densenet_instance.densenet_detect(pil_image)
                                 
+                                # If DenseNet prediction is not None
                                 if self.predict_densenet != None:
+                                    # Get the predicted label and confidence
                                     self.predict_label = LETTERS_CLASSES[self.predict_densenet[0]]
                                     self.conf = self.predict_densenet[1]
                                     self.label_txt = f"{self.predict_label} {self.conf:.2f}"
+                                    # Add box label to the image annotation
                                     c = annotator.box_label(xyxy, self.label_txt, color=colors(self.predict_densenet[0]%20, True)) 
+                                # If DenseNet prediction is None
                                 else:
+                                    # Set predicted label to empty
                                     self.predict_label = " "
+                            # For every non-3rd prediction
                             else:
+                                # If label text is not empty and DenseNet prediction is not None
                                 if self.label_txt!= " " and self.predict_densenet != None:
+                                    # Add box label to the image annotation
                                     c = annotator.box_label(xyxy, self.label_txt, color=colors(self.predict_densenet[0]%20, True)) 
-
-                                
-                                    
+            
                         # if save_img or save_crop or view_img:  # Add bbox to image
                         #     c = int(cls)  # integer class
                         #     label = None if hide_labels else (names[c] if hide_conf else f"{names[c]} {conf:.2f}")
@@ -300,6 +318,7 @@ class YOLOv5:
                 # Append the results to the lists for each iteration
                 self.im_result = im0
                 new_result = {'image': self.im_result, 'label': self.predict_label,'valid': True if self.cnt == 0 else False} 
+                # Show the webcam feed with the new result
                 self.window_instance.show_webcam(new_result)
                 self.cnt = self.cnt + 1
 
@@ -316,12 +335,15 @@ class YOLOv5:
             strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
 
+
     def main(self,active_network_flag):
+        # Check requirements
         check_requirements(ROOT / "requirements.txt", exclude=("tensorboard", "thop"))
 
         imgsz = [640]  # default value
         imgsz *= 2 if len(imgsz) == 1 else 1  # expand
        
+        # Run detection based on the active network flag
         self.run_detect(active_network_flag = active_network_flag,
                         weights=ROOT / "yolov5l6_v3.pt", source="0", data=ROOT / "hand_data.yaml",
                         imgsz=imgsz, conf_thres=0.35, iou_thres=0.45, max_det=1, device="", view_img=False,

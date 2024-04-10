@@ -1,3 +1,10 @@
+"""
+This script defines various constants and parameters used throughout the application.
+It includes constants for page indices, font styles, model parameters, file paths,
+and training parameters. Additionally, it provides functions to generate custom font
+styles and transforms for image preprocessing.
+"""
+
 # Constants
 PORT = 1234
 HOME_PAGE = 0
@@ -16,6 +23,7 @@ BASE_STYLE = (
     f'width: 425px;'
 )
 
+#Font for messeage with custom color + border
 def generate_style(color):
     return BASE_STYLE + (
     f'color: {color}; '
@@ -27,7 +35,7 @@ import torch
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-#Densenet params               
+#Densenet params (default)               
 GROWTH_RATE = 32
 NUM_INIT_FEATURES = 64
 BN_SIZE= 4
@@ -46,19 +54,11 @@ DENSENET_TYPE_DICT = {
 PT_PATH = 'densenet_asl/models/20_03_2024_13_59_09/' #12_03_2024_13_30_53 + new 
 PT_FILE = 'densenet121_best.pt' 
 
-#paths
-DATASET_PATH_TRAIN = 'densenet_asl/dataset/train'
-DATASET_PATH_TEST = 'densenet_asl/dataset/test'
+# #paths
+# DATASET_PATH_TRAIN = 'densenet_asl/dataset_custom2/train'
+# DATASET_PATH_TEST = 'densenet_asl/dataset_custom2/test'
 
-
-# transforms_norm from norm.py
-# Mean: [0.5858049, 0.4458805, 0.33990178]
-# Std: [0.19744971, 0.18429077, 0.19292982]
-
-#transforms_norm according to https://pytorch.org/hub/pytorch_vision_densenet/
-# Mean: [0.485, 0.456, 0.406]
-# Std: [0.229, 0.224, 0.225]
-
+#meam and std values for transforms for densenet121
 NORM_MEAN = [0.485, 0.456, 0.406]
 NORM_STD= [0.229, 0.224, 0.225]
 

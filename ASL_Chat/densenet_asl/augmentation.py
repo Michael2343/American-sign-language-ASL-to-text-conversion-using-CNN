@@ -1,3 +1,8 @@
+"""
+This script defines functions to read JPG files from specified folders,
+perform image augmentation using imgaug library, and save augmented images.
+"""
+
 import imageio
 import imgaug as ia
 import imgaug.augmenters as iaa
@@ -5,6 +10,7 @@ import imageio.v2 as imageio
 from PIL import Image
 import os
 
+# Function to perform image augmentation
 def make_aug(full_folder_path,jpg_file,input_img):
     path = full_folder_path + "/" + jpg_file
     
@@ -52,7 +58,7 @@ def make_aug(full_folder_path,jpg_file,input_img):
         im = Image.fromarray(input_shear)
         im.save(f"{path}_S{i}.jpg")
 
-
+# Function to read JPG files from specified folder
 def read_jpg_files(folder_path):
     current_script_path = os.path.dirname(os.path.abspath(__file__))
     full_folder_path = os.path.join(current_script_path, folder_path)

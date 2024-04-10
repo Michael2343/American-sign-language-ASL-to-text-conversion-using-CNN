@@ -1,4 +1,9 @@
-# Load in relevant libraries, and alias where appropriate
+"""
+This script trains a DenseNet model on a custom dataset. It loads necessary libraries, creates a custom
+dataset using ImageFolder, sets up model training parameters, trains the model, and saves the best and last
+trained models along with training logs.
+"""
+
 import torch
 import torch.nn as nn
 import torchvision
@@ -10,6 +15,7 @@ import sys
 from datetime import datetime
 import os 
 
+# Function to train the DenseNet model
 def densenet_train(batch,lr):
 
     # Create a custom dataset using ImageFolder
@@ -24,11 +30,13 @@ def densenet_train(batch,lr):
                                             shuffle = True)
 
 
+    # Instantiate the DenseNet model
     model = make_densenet(type=DENSENET_TYPE).to(DEVICE)
     print(model.get_densenet_type())
     
     pre_trained_model = None 
 
+    # Load pre-trained model if specified
     if PYTORCH_MODEL: 
         pre_trained_model = torch.load('models/pytorch/densenet'+DENSENET_TYPE+'.pt')
     if CUSTOM_MODEL:
@@ -49,6 +57,7 @@ def densenet_train(batch,lr):
         pre_trained_model.classifier = new_final_layer
         model.load_state_dict(pre_trained_model.state_dict(), strict=False)
 
+    # Define loss function and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(),lr=lr, betas=BETAS,eps=EPS, weight_decay=WEIGHT_DECAY)
 
@@ -63,6 +72,7 @@ def densenet_train(batch,lr):
     path = f"models/{dt_string}"
     os.mkdir(path)
     
+    # Write training parameters to a file
     f = open(f'{path}/params.txt', "w")
     f.write(f'densenet{DENSENET_TYPE}\n')
     f.write(f'PYTORCH_MODEL={PYTORCH_MODEL}\n')
@@ -89,7 +99,6 @@ def densenet_train(batch,lr):
             outputs = model(images)
             loss = criterion(outputs, labels)
             
-            
             # Backward and optimize
             optimizer.zero_grad()
             loss.backward()
@@ -99,6 +108,7 @@ def densenet_train(batch,lr):
         print(progress)
         f.write(f'{progress}\n')
 
+        # Update best loss and model if current loss is better
         if loss.item()<best_loss[0]:
             best_loss = [loss.item(),epoch+1]
             best_model = model
@@ -112,7 +122,7 @@ def densenet_train(batch,lr):
     # Save the model (best and last)
     torch.save(model, f'{path}/densenet'+DENSENET_TYPE+'_last.pt')
     torch.save(best_model, f'{path}/densenet'+DENSENET_TYPE+'_best.pt')
-      
-if __name__ == "__main__":
-       
+
+# Entry point of the script      
+if __name__ == "__main__": 
     densenet_train(batch=16,lr=0.0001)
