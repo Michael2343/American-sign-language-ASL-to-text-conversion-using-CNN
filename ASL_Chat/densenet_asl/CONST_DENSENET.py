@@ -1,3 +1,10 @@
+"""
+This script defines various constants and parameters used throughout the densenet.
+It includes constants for page indices model parameters, file paths,
+and training parameters. 
+Additionally, it provides functions for transforms for image preprocessing.
+"""
+
 import torchvision.transforms as transforms
 import torch
 

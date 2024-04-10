@@ -1,3 +1,11 @@
+"""
+This script defines a DenseNet model architecture for image classification tasks.
+DenseNet (Densely Connected Convolutional Networks) is a deep neural network architecture
+that connects each layer to every other layer in a feed-forward fashion. This connectivity
+pattern leads to strong gradient flow, encourages feature reuse, and reduces the number of
+parameters. The script also includes functions to create and use DenseNet models.
+"""
+
 # https://amaarora.github.io/posts/2020-08-02-densenets.html
 
 import torch
@@ -8,6 +16,7 @@ from torch import Tensor
 from CONST import *
 import time 
 
+# Class defining a transition block in DenseNet
 class _Transition(nn.Sequential):
     def __init__(self, num_input_features, num_output_features):
         super(_Transition, self).__init__()
@@ -17,7 +26,7 @@ class _Transition(nn.Sequential):
                                           kernel_size=1, stride=1, bias=False))
         self.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=2))
         
-        
+# Class defining a dense layer in DenseNet        
 class _DenseLayer(nn.Module):
     def __init__(self, num_input_features, growth_rate, bn_size, drop_rate, memory_efficient=False):
         super(_DenseLayer, self).__init__()
@@ -53,7 +62,8 @@ class _DenseLayer(nn.Module):
             new_features = F.dropout(new_features, p=self.drop_rate,
                                      training=self.training)
         return new_features
-
+    
+# Class defining a dense block in DenseNet
 class _DenseBlock(nn.ModuleDict):
     _version = 2
 
@@ -76,7 +86,7 @@ class _DenseBlock(nn.ModuleDict):
             features.append(new_features)
         return torch.cat(features, 1)
     
-
+# Class defining the DenseNet model
 class DenseNet(nn.Module):
     def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
                  num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
@@ -174,8 +184,7 @@ class DenseNet(nn.Module):
             return [predicted_class.item(),confidence_score.item()*100]
         return None
 
-
-
+# Function that return densente model based on type
 def make_densenet(type="121",pretrained=False, progress=True, **kwargs):
     block_config = DENSENET_TYPE_DICT.get(type, None)
 

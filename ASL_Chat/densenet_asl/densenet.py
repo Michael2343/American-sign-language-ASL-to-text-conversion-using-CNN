@@ -1,13 +1,22 @@
+"""
+This script defines a DenseNet model architecture for image classification tasks.
+DenseNet (Densely Connected Convolutional Networks) is a deep neural network architecture
+that connects each layer to every other layer in a feed-forward fashion. This connectivity
+pattern leads to strong gradient flow, encourages feature reuse, and reduces the number of
+parameters. The script also includes functions to create and use DenseNet models.
+"""
+
 # https://amaarora.github.io/posts/2020-08-02-densenets.html
 
-import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from collections import OrderedDict
 from torch import Tensor
-from CONST_DENSENET import *
+from CONST import *
+import time 
 
+# Class defining a transition block in DenseNet
 class _Transition(nn.Sequential):
     def __init__(self, num_input_features, num_output_features):
         super(_Transition, self).__init__()
@@ -17,7 +26,7 @@ class _Transition(nn.Sequential):
                                           kernel_size=1, stride=1, bias=False))
         self.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=2))
         
-        
+# Class defining a dense layer in DenseNet        
 class _DenseLayer(nn.Module):
     def __init__(self, num_input_features, growth_rate, bn_size, drop_rate, memory_efficient=False):
         super(_DenseLayer, self).__init__()
@@ -53,7 +62,8 @@ class _DenseLayer(nn.Module):
             new_features = F.dropout(new_features, p=self.drop_rate,
                                      training=self.training)
         return new_features
-
+    
+# Class defining a dense block in DenseNet
 class _DenseBlock(nn.ModuleDict):
     _version = 2
 
@@ -76,7 +86,7 @@ class _DenseBlock(nn.ModuleDict):
             features.append(new_features)
         return torch.cat(features, 1)
     
-
+# Class defining the DenseNet model
 class DenseNet(nn.Module):
     def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
                  num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
@@ -140,8 +150,41 @@ class DenseNet(nn.Module):
         out = torch.flatten(out, 1)
         out = self.classifier(out)
         return out
+    
+    def densenet_detect(self,image):        
+        # Set the model to evaluation mode
+        self.eval()
+        
+        start_time = time.time()
 
+        # Apply the same transformations used during training
+        processed_image = TRANSFORM_MEAN_STD(image)
 
+        # Add a batch dimension to match the model's input shape
+        processed_image = processed_image.unsqueeze(0)
+
+        # Move the processed image to the device (GPU or CPU)
+        processed_image = processed_image.to(DEVICE)
+
+        # Make predictions
+        with torch.no_grad():
+            outputs = self(processed_image)
+            probabilities = nn.functional.softmax(outputs, dim=1)
+
+        # Get the predicted class and confidence score
+        confidence_score, predicted_class = torch.max(probabilities, 1)
+        
+
+        end_time = time.time()
+        if confidence_score.item()*100>80:
+            print(f'The predicted class is: {predicted_class.item()} with conf= {confidence_score.item()*100}%')
+            elapsed_time = end_time - start_time
+            print(f"Elapsed time: {elapsed_time} seconds")
+            print("")
+            return [predicted_class.item(),confidence_score.item()*100]
+        return None
+
+# Function that return densente model based on type
 def make_densenet(type="121",pretrained=False, progress=True, **kwargs):
     block_config = DENSENET_TYPE_DICT.get(type, None)
 
@@ -151,4 +194,5 @@ def make_densenet(type="121",pretrained=False, progress=True, **kwargs):
     
     model = DenseNet(growth_rate=GROWTH_RATE, block_config=block_config,num_init_features=NUM_INIT_FEATURES, 
                     bn_size=BN_SIZE, drop_rate=DROP_RATE, num_classes=NUM_CLASSES, memory_efficient=MEMORY_EFFICIENT)
+    
     return model

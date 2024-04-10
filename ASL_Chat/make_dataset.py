@@ -1,3 +1,12 @@
+""" 
+This script captures images from a video feed, detects objects using a YOLOv5 model,
+crops the detected objects, and saves them into training and testing directories.
+It also includes functions to create a countdown before capturing photos and to create
+directories if they don't exist.
+The script is designed to collect data for training a model to recognize characters
+from the video feed.  
+"""
+
 import cv2
 import torch
 from PIL import Image
@@ -5,13 +14,14 @@ import time
 from densenet import *
 import os  
 
-
+# Function to create a countdown
 def countdown(sec):
     for i in range(sec, 0, -1):
         print(i)
         time.sleep(1)
     print("GO!")
     
+# Function to create a directory if it doesn't exist
 def make_path(path):
     if not os.path.exists(path):
         try:
@@ -29,18 +39,17 @@ def make_path(path):
     
 # Model
 path = 'yolov5/yolov5l6_v3.pt' #base+c+h
-
 model = torch.hub.load('yolov5', 'custom', path=path, source='local',force_reload = True) 
 dataset = "dataset"
-# pathLetter = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+pathLetter = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 # pathLetter = ["Z_DELETE","Z_ENTER","Z_SPACE"]
-pathLetter = "GH" 
 
 number_photos = 20
 number_test = 4
 
 vid = cv2.VideoCapture(0) 
 
+# Iterate through each character
 for ch in pathLetter:
     
     path_train = os.path.join(dataset,"train", ch)
@@ -69,16 +78,6 @@ for ch in pathLetter:
         # cnt = cnt +1
 
         results = model(opencv_image_rgb)  # includes NMS
-        # Results
-        # results.show()  # display results
-        # time.sleep(1)
-        # Data
-        # print('\n', results.xyxy[0])  # print img1 predictions
-        #          x1 (pixels)  y1 (pixels)  x2 (pixels)  y2 (pixels)   confidence        class
-        # tensor([[7.47613e+02, 4.01168e+01, 1.14978e+03, 7.12016e+02, 8.71210e-01, 0.00000e+00],
-        #         [1.17464e+02, 1.96875e+02, 1.00145e+03, 7.11802e+02, 8.08795e-01, 0.00000e+00],
-        #         [4.23969e+02, 4.30401e+02, 5.16833e+02, 7.20000e+02, 7.77376e-01, 2.70000e+01],
-        #         [9.81310e+02, 3.10712e+02, 1.03111e+03, 4.19273e+02, 2.86850e-01, 2.70000e+01]])
 
         try:
             # Extract coordinates from results.xyxy[0]
